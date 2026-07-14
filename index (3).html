@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>청소년 기회 통합 플랫폼</title>
+<style>
+  :root{
+    --primary:#4f46e5;
+    --primary-light:#eef2ff;
+    --danger:#ef4444;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --bg:#f9fafb;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:70px;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== 상단 헤더 ===== */
+  header{
+    background:var(--card);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:50;padding:14px 16px;
+  }
+  .header-top{display:flex;align-items:center;gap:10px;max-width:960px;margin:0 auto;}
+  .logo{
+    width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--primary),#7c3aed);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:20px;font-weight:700;flex-shrink:0;
+  }
+  .brand h1{font-size:18px;font-weight:800;}
+  .brand p{font-size:12px;color:var(--muted);}
+  .search-box{max-width:960px;margin:12px auto 0;position:relative;}
+  .search-box input{
+    width:100%;padding:12px 14px 12px 40px;border:1px solid var(--border);
+    border-radius:12px;font-size:15px;outline:none;background:var(--bg);
+  }
+  .search-box input:focus{border-color:var(--primary);background:#fff;}
+  .search-box .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);}
+
+  /* ===== 컨테이너 ===== */
+  main{max-width:960px;margin:0 auto;padding:16px;}
+
+  /* ===== 필터 / 정렬 ===== */
+  .toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+  .chip{
+    white-space:nowrap;padding:7px 14px;border:1px solid var(--border);
+    border-radius:999px;background:#fff;font-size:13px;cursor:pointer;color:var(--muted);
+  }
+  .chip.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600;}
+  .sort-row{display:flex;align-items:center;justify-content:space-between;}
+  .sort-row .count{font-size:13px;color:var(--muted);}
+  .sort-row select{
+    padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;
+  }
+
+  /* ===== 카드 목록 ===== */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.08);}
+  .card .thumb{width:100%;height:130px;object-fit:cover;background:var(--primary-light);}
+  .card .body{padding:12px;}
+  .card .field{
+    display:inline-block;font-size:11px;color:var(--primary);
+    background:var(--primary-light);padding:3px 8px;border-radius:6px;margin-bottom:6px;
+  }
+  .card h3{font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.35;}
+  .card .org{font-size:12px;color:var(--muted);}
+  .card .dday{
+    position:absolute;top:10px;left:10px;font-size:11px;font-weight:700;
+    padding:4px 8px;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;
+  }
+  .card .dday.urgent{background:var(--danger);}
+  .card .fav{
+    position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,.9);border:none;font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .empty{text-align:center;color:var(--muted);padding:60px 0;}
+
+  /* ===== 하단 탭바 ===== */
+  .tabbar{
+    position:fixed;bottom:0;left:0;right:0;background:var(--card);
+    border-top:1px solid var(--border);display:flex;z-index:50;
+  }
+  .tabbar button{
+    flex:1;border:none;background:none;padding:10px 0 12px;cursor:pointer;
+    font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  .tabbar button.active{color:var(--primary);font-weight:700;}
+  .tabbar button .ic{font-size:20px;}
+
+  /* ===== 상세 모달 ===== */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .modal-bg.open{display:flex;}
+  .modal{
+    background:#fff;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
+    border-radius:20px 20px 0 0;animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(40px);opacity:.6;}to{transform:none;opacity:1;}}
+  .modal .cover{width:100%;height:220px;object-fit:cover;background:var(--primary-light);}
+  .modal .m-body{padding:18px;}
+  .modal .close{
+    position:absolute;top:14px;right:16px;background:rgba(0,0,0,.5);color:#fff;border:none;
+    width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;
+  }
+  .modal h2{font-size:20px;margin-bottom:10px;}
+  .info-row{display:flex;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .info-row .label{width:90px;color:var(--muted);flex-shrink:0;}
+  .desc{margin:16px 0;font-size:14px;color:#374151;white-space:pre-wrap;}
+  .apply-btn{
+    display:block;text-align:center;background:var(--primary);color:#fff;
+    padding:14px;border-radius:12px;font-weight:700;font-size:15px;margin-top:8px;
+  }
+  .m-fav{
+    width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;
+    background:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;
+  }
+  .m-fav.on{background:#fff1f2;color:var(--danger);border-color:#fecaca;}
+  .alert-badge{
+    background:#fef2f2;color:var(--danger);padding:8px 12px;border-radius:10px;
+    font-size:13px;font-weight:600;margin-bottom:12px;display:none;
+  }
+  .toast{
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:#1f2937;color:#fff;padding:11px 18px;border-radius:999px;
+    font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+  .loading{text-align:center;padding:50px 0;color:var(--muted);}
+
+  /* ===== 대회 등록 버튼(FAB) ===== */
+  .fab{
+    position:fixed;right:16px;bottom:82px;z-index:60;
+    background:var(--primary);color:#fff;border:none;cursor:pointer;
+    padding:14px 18px;border-radius:999px;font-size:15px;font-weight:700;
+    box-shadow:0 6px 18px rgba(79,70,229,.4);display:flex;align-items:center;gap:6px;
+  }
+  .fab:hover{background:#4338ca;}
+
+  /* ===== 등록 폼 ===== */
+  .form-group{margin-bottom:14px;}
+  .form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;}
+  .form-group label .req{color:var(--danger);}
+  .form-group input,
+  .form-group select,
+  .form-group textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;
+    font-size:14px;font-family:inherit;outline:none;background:var(--bg);
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus{border-color:var(--primary);background:#fff;}
+  .form-group textarea{resize:vertical;min-height:90px;}
+  .form-row{display:flex;gap:10px;}
+  .form-row .form-group{flex:1;}
+  .submit-btn{
+    display:block;width:100%;text-align:center;background:var(--primary);color:#fff;border:none;
+    padding:14px;border-radius:12px;font-weight:700;font-size:15px;margin-top:6px;cursor:pointer;
+  }
+  .submit-btn:hover{background:#4338ca;}
+</style>
+</head>
+<body>
+
+<!-- 상단: 로고 / 이름 / 검색창 -->
+<header>
+  <div class="header-top">
+    <div class="logo">🎯</div>
+    <div class="brand">
+      <h1>청소년 기회 통합 플랫폼</h1>
+      <p>대회·공모전 정보를 한곳에서 쉽고 빠르게</p>
+    </div>
+  </div>
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input id="searchInput" type="text" placeholder="대회명, 주최기관, 참가대상으로 검색" />
+  </div>
+</header>
+
+<!-- 중앙: 카테고리 필터 + 목록 -->
+<main>
+  <div class="toolbar">
+    <div class="chips" id="categoryChips"></div>
+    <div class="sort-row">
+      <span class="count" id="resultCount"></span>
+      <select id="sortSelect">
+        <option value="deadline">마감 임박순</option>
+        <option value="popular">인기순</option>
+        <option value="latest">최신 등록순</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid" id="listGrid"></div>
+  <div class="loading" id="loading">불러오는 중...</div>
+  <div class="empty" id="empty" style="display:none;">조건에 맞는 대회가 없어요 😢</div>
+</main>
+
+<!-- 하단 탭바: 즐겨찾기 / 마감 임박 / 문의 -->
+<nav class="tabbar">
+  <button data-tab="home" class="active"><span class="ic">🏠</span>홈</button>
+  <button data-tab="favorite"><span class="ic">⭐</span>즐겨찾기</button>
+  <button data-tab="deadline"><span class="ic">⏰</span>마감 임박</button>
+  <button data-tab="contact"><span class="ic">✉️</span>문의</button>
+</nav>
+
+<!-- 상세 페이지 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div style="position:relative;">
+      <img class="cover" id="mCover" src="" alt="포스터" />
+      <button class="close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="alert-badge" id="mAlert"></div>
+      <span class="card field" id="mField"></span>
+      <h2 id="mTitle"></h2>
+      <div class="info-row"><span class="label">주최기관</span><span id="mOrg"></span></div>
+      <div class="info-row"><span class="label">참가대상</span><span id="mTarget"></span></div>
+      <div class="info-row"><span class="label">접수기간</span><span id="mPeriod"></span></div>
+      <div class="info-row"><span class="label">조회수</span><span id="mView"></span></div>
+      <p class="desc" id="mDesc"></p>
+      <a class="apply-btn" id="mApply" target="_blank" rel="noopener">신청하러 가기 →</a>
+      <button class="m-fav" id="mFav" onclick="toggleFavFromModal()"></button>
+    </div>
+  </div>
+</div>
+
+<!-- 대회 등록 버튼 -->
+<button class="fab" onclick="openAddModal()">➕ 대회 등록</button>
+
+<!-- 대회 등록 모달 -->
+<div class="modal-bg" id="addModalBg">
+  <div class="modal">
+    <div class="m-body" style="position:relative;">
+      <button class="close" style="top:0;right:0;position:absolute;" onclick="closeAddModal()">✕</button>
+      <h2 style="margin-bottom:16px;">새 대회 등록</h2>
+      <form id="addForm" onsubmit="submitAdd(event)">
+        <div class="form-group">
+          <label>대회명 <span class="req">*</span></label>
+          <input name="대회명" type="text" required placeholder="예: 전국 청소년 앱개발 챌린지" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>분야 <span class="req">*</span></label>
+            <input name="분야" type="text" required list="fieldOptions" placeholder="예: IT/개발" />
+            <datalist id="fieldOptions"></datalist>
+          </div>
+          <div class="form-group">
+            <label>주최기관</label>
+            <input name="주최기관" type="text" placeholder="예: 한국정보진흥원" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>참가대상</label>
+          <input name="참가대상" type="text" placeholder="예: 중·고등학생" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>접수 시작일</label>
+            <input name="접수시작일" type="date" />
+          </div>
+          <div class="form-group">
+            <label>접수 마감일</label>
+            <input name="접수마감일" type="date" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>간단 설명</label>
+          <textarea name="간단설명" placeholder="대회에 대한 소개를 적어주세요."></textarea>
+        </div>
+        <div class="form-group">
+          <label>신청 링크</label>
+          <input name="신청링크" type="url" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>포스터 이미지 URL</label>
+          <input name="포스터이미지" type="url" placeholder="비워두면 기본 이미지가 표시돼요" />
+        </div>
+        <button class="submit-btn" type="submit">등록하기</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 설정 ================= */
+// ▼ Apps Script 웹 앱 배포 후 받은 URL을 여기에 붙여넣으세요.
+const API_URL = 'https://script.google.com/macros/s/AKfycbwpBiYVv8p38K4CFSP4c97rBQPi-K38CdQfhbb_WGjIo0OzZn0SeT0dItc_7ZyLmrh2/exec'; // 예: 'https://script.google.com/macros/s/XXXX/exec'
+
+/* ============== 전역 상태 ============== */
+let ALL = [];                 // 전체 대회 데이터
+let currentCategory = '전체';
+let currentTab = 'home';
+const FAV_KEY = 'youth_favorites';
+let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+const ADD_KEY = 'youth_added';          // 사용자가 직접 등록한 대회 저장소
+let added = JSON.parse(localStorage.getItem(ADD_KEY) || '[]');
+
+/* ============== 초기 로드 ============== */
+window.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  bindEvents();
+  await loadData();
+}
+
+async function loadData(){
+  const loading = document.getElementById('loading');
+  loading.style.display = 'block';
+  try{
+    if(API_URL){
+      const res = await fetch(API_URL + '?action=list');
+      const out = await res.json();
+      ALL = out.ok ? out.data : [];
+    }else{
+      // API_URL 미설정 시 데모 데이터로 화면 확인 가능
+      ALL = DEMO_DATA;
+    }
+  }catch(e){
+    console.error(e);
+    ALL = DEMO_DATA;
+    showToast('데이터를 불러오지 못해 데모 데이터를 표시합니다');
+  }
+  // 서버(구글 시트) 미연결 시에만, 로컬에 임시 저장한 대회를 앞쪽에 합침
+  if(!API_URL){
+    ALL = [...added, ...ALL];
+  }
+  loading.style.display = 'none';
+  buildCategoryChips();
+  render();
+  checkDeadlineAlerts();
+}
+
+/* ============== 이벤트 바인딩 ============== */
+function bindEvents(){
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('sortSelect').addEventListener('change', render);
+  document.querySelectorAll('.tabbar button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      if(currentTab === 'contact'){ openContact(); return; }
+      render();
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+  document.getElementById('modalBg').addEventListener('click', e=>{
+    if(e.target.id === 'modalBg') closeModal();
+  });
+}
+
+/* ============== 카테고리 칩 ============== */
+function buildCategoryChips(){
+  const cats = ['전체', ...new Set(ALL.map(x=>x['분야']).filter(Boolean))];
+  const wrap = document.getElementById('categoryChips');
+  wrap.innerHTML = cats.map(c=>
+    `<div class="chip ${c===currentCategory?'active':''}" onclick="selectCategory('${c}')">${c}</div>`
+  ).join('');
+}
+function selectCategory(c){
+  currentCategory = c;
+  buildCategoryChips();
+  render();
+}
+
+/* ============== 목록 렌더 ============== */
+function render(){
+  const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+  const sortBy = document.getElementById('sortSelect').value;
+  let list = [...ALL];
+
+  // 탭별 필터
+  if(currentTab === 'favorite'){
+    list = list.filter(x=>favorites.includes(String(x['고유번호'])));
+  }else if(currentTab === 'deadline'){
+    list = list.filter(x=>{const d=getDday(x); return d!==null && d>=0 && d<=7;});
+  }
+
+  // 카테고리 필터
+  if(currentCategory !== '전체'){
+    list = list.filter(x=>x['분야'] === currentCategory);
+  }
+
+  // 검색 (대회명 / 주최기관 / 참가대상)
+  if(keyword){
+    list = list.filter(x=>
+      (x['대회명']||'').toLowerCase().includes(keyword) ||
+      (x['주최기관']||'').toLowerCase().includes(keyword) ||
+      (x['참가대상']||'').toLowerCase().includes(keyword)
+    );
+  }
+
+  // 정렬
+  if(sortBy === 'deadline'){
+    list.sort((a,b)=>{
+      const da=getDday(a), db=getDday(b);
+      if(da===null) return 1; if(db===null) return -1;
+      return da-db;
+    });
+  }else if(sortBy === 'popular'){
+    list.sort((a,b)=>(Number(b['조회수'])||0)-(Number(a['조회수'])||0));
+  }else{
+    list.sort((a,b)=>(Number(b['고유번호'])||0)-(Number(a['고유번호'])||0));
+  }
+
+  const grid = document.getElementById('listGrid');
+  const empty = document.getElementById('empty');
+  document.getElementById('resultCount').textContent = `총 ${list.length}건`;
+
+  if(list.length === 0){
+    grid.innerHTML=''; empty.style.display='block'; return;
+  }
+  empty.style.display='none';
+
+  grid.innerHTML = list.map(x=>{
+    const id = String(x['고유번호']);
+    const dday = getDday(x);
+    const ddayLabel = dday===null ? '상시' : (dday<0 ? '마감' : (dday===0?'D-DAY':`D-${dday}`));
+    const urgent = dday!==null && dday>=0 && dday<=3;
+    const isFav = favorites.includes(id);
+    const img = x['포스터이미지'] || 'https://picsum.photos/seed/'+id+'/600/400';
+    return `
+      <div class="card" onclick="openDetail('${id}')">
+        <span class="dday ${urgent?'urgent':''}">${ddayLabel}</span>
+        <button class="fav" onclick="event.stopPropagation();toggleFav('${id}')">${isFav?'❤️':'🤍'}</button>
+        <img class="thumb" src="${img}" alt="${escapeHtml(x['대회명'])}" onerror="this.src='https://picsum.photos/seed/${id}/600/400'"/>
+        <div class="body">
+          <span class="field">${escapeHtml(x['분야']||'기타')}</span>
+          <h3>${escapeHtml(x['대회명']||'')}</h3>
+          <p class="org">${escapeHtml(x['주최기관']||'')}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ============== 상세 페이지 ============== */
+async function openDetail(id){
+  let item = ALL.find(x=>String(x['고유번호'])===String(id));
+  // 서버에서 조회수 증가 & 최신 데이터 반영
+  if(API_URL){
+    try{
+      const res = await fetch(API_URL+'?action=detail&id='+encodeURIComponent(id));
+      const out = await res.json();
+      if(out.ok) item = out.data;
+    }catch(e){/* 무시하고 로컬 데이터 사용 */}
+  }else{
+    item['조회수'] = (Number(item['조회수'])||0)+1;
+  }
+  if(!item) return;
+
+  const dday = getDday(item);
+  document.getElementById('mCover').src = item['포스터이미지'] || 'https://picsum.photos/seed/'+id+'/600/400';
+  document.getElementById('mField').textContent = item['분야']||'기타';
+  document.getElementById('mTitle').textContent = item['대회명']||'';
+  document.getElementById('mOrg').textContent = item['주최기관']||'-';
+  document.getElementById('mTarget').textContent = item['참가대상']||'-';
+  document.getElementById('mPeriod').textContent = `${item['접수시작일']||'-'} ~ ${item['접수마감일']||'-'}`;
+  document.getElementById('mView').textContent = (item['조회수']||0)+'회';
+  document.getElementById('mDesc').textContent = item['간단설명']||'';
+  document.getElementById('mApply').href = item['신청링크']||'#';
+
+  // 마감 알림
+  const alertBox = document.getElementById('mAlert');
+  if(dday!==null && dday>=0 && dday<=7){
+    alertBox.style.display='block';
+    alertBox.textContent = dday===0 ? '⏰ 오늘 접수 마감입니다!' : `⏰ 접수 마감 ${dday}일 전! 서둘러 신청하세요`;
+  }else if(dday!==null && dday<0){
+    alertBox.style.display='block';
+    alertBox.textContent = '❌ 접수가 마감된 대회입니다';
+  }else{
+    alertBox.style.display='none';
+  }
+
+  updateModalFavBtn(id);
+  document.getElementById('mFav').dataset.id = id;
+  document.getElementById('modalBg').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* ============== 즐겨찾기 ============== */
+function toggleFav(id){
+  id = String(id);
+  const i = favorites.indexOf(id);
+  if(i>=0){ favorites.splice(i,1); showToast('즐겨찾기에서 제거했어요'); }
+  else{ favorites.push(id); showToast('즐겨찾기에 추가했어요 ❤️'); }
+  localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+  render();
+}
+function toggleFavFromModal(){
+  const id = document.getElementById('mFav').dataset.id;
+  toggleFav(id);
+  updateModalFavBtn(id);
+}
+function updateModalFavBtn(id){
+  const btn = document.getElementById('mFav');
+  const on = favorites.includes(String(id));
+  btn.textContent = on ? '❤️ 즐겨찾기 해제' : '🤍 즐겨찾기 추가';
+  btn.classList.toggle('on', on);
+}
+
+/* ============== 마감 알림 ============== */
+function checkDeadlineAlerts(){
+  const soon = ALL.filter(x=>{
+    const d=getDday(x);
+    return favorites.includes(String(x['고유번호'])) && d!==null && d>=0 && d<=3;
+  });
+  if(soon.length>0){
+    setTimeout(()=>showToast(`⏰ 즐겨찾기한 대회 ${soon.length}건이 곧 마감돼요!`), 800);
+  }
+}
+
+/* ============== 대회 등록 ============== */
+function openAddModal(){
+  // 분야 자동완성 옵션 채우기 (기존 데이터의 분야 목록)
+  const cats = [...new Set(ALL.map(x=>x['분야']).filter(Boolean))];
+  document.getElementById('fieldOptions').innerHTML =
+    cats.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  document.getElementById('addModalBg').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeAddModal(){
+  document.getElementById('addModalBg').classList.remove('open');
+  document.body.style.overflow='';
+}
+function nextId(){
+  const max = ALL.reduce((m,x)=>Math.max(m, Number(x['고유번호'])||0), 0);
+  return max + 1;
+}
+function goHomeAndRender(){
+  currentTab = 'home';
+  currentCategory = '전체';
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab==='home'));
+  buildCategoryChips();
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function submitAdd(e){
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('.submit-btn');
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  // 날짜 유효성: 마감일이 시작일보다 빠르면 안내
+  if(data['접수시작일'] && data['접수마감일'] && data['접수마감일'] < data['접수시작일']){
+    showToast('접수 마감일이 시작일보다 빠를 수 없어요');
+    return;
+  }
+
+  const item = {
+    대회명: (data['대회명']||'').trim(),
+    분야: (data['분야']||'기타').trim() || '기타',
+    주최기관: (data['주최기관']||'').trim(),
+    참가대상: (data['참가대상']||'').trim(),
+    접수시작일: data['접수시작일']||'',
+    접수마감일: data['접수마감일']||'',
+    간단설명: (data['간단설명']||'').trim(),
+    신청링크: (data['신청링크']||'').trim(),
+    포스터이미지: (data['포스터이미지']||'').trim(),
+    조회수: 0
+  };
+
+  // ===== 서버(구글 시트)에 진짜 저장 =====
+  if(API_URL){
+    btn.disabled = true; btn.textContent = '등록 중...';
+    try{
+      // Apps Script는 text/plain으로 보내면 CORS 사전요청 없이 통과됩니다.
+      const res = await fetch(API_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'add', data:item})
+      });
+      const out = await res.json();
+      if(!out.ok) throw new Error(out.error || '서버 오류');
+      form.reset();
+      closeAddModal();
+      await loadData();               // 시트에서 최신 목록 다시 불러오기
+      goHomeAndRender();
+      showToast('대회를 등록했어요 🎉');
+    }catch(err){
+      console.error(err);
+      showToast('등록 실패 😢 구글 시트 연결을 확인해주세요');
+    }finally{
+      btn.disabled = false; btn.textContent = '등록하기';
+    }
+    return;
+  }
+
+  // ===== 서버 미연결 시: 로컬 임시 저장(미리보기) =====
+  item['고유번호'] = nextId();
+  added.unshift(item);
+  localStorage.setItem(ADD_KEY, JSON.stringify(added));
+  ALL.unshift(item);
+  form.reset();
+  closeAddModal();
+  goHomeAndRender();
+  showToast('임시 저장됨 · 구글 시트 연결 후 진짜 등록돼요');
+}
+
+/* ============== 문의 ============== */
+function openContact(){
+  alert('📮 문의 안내\n\n청소년 기회 통합 플랫폼\n이메일: weniv@weniv.co.kr\n\n서비스 개선 의견을 언제든 보내주세요!');
+  // 문의 탭 → 홈으로 복귀
+  document.querySelector('.tabbar button[data-tab="home"]').click();
+}
+
+/* ============== 유틸 ============== */
+function getDday(item){
+  const end = item['접수마감일'];
+  if(!end) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(end);
+  if(isNaN(d)) return null;
+  d.setHours(0,0,0,0);
+  return Math.round((d-today)/86400000);
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============== 데모 데이터 (API_URL 미설정 시) ============== */
+const DEMO_DATA = [
+  {고유번호:1,대회명:'전국 청소년 앱개발 챌린지',분야:'IT/개발',주최기관:'한국정보진흥원',참가대상:'중·고등학생',접수시작일:'2026-07-01',접수마감일:'2026-07-11',간단설명:'나만의 앱 아이디어로 참가하는 전국 규모 대회입니다. 팀 또는 개인으로 참가 가능합니다.',신청링크:'https://example.com/apply/1',포스터이미지:'https://picsum.photos/seed/app/600/400',조회수:12},
+  {고유번호:2,대회명:'청소년 환경 포스터 공모전',분야:'디자인/미술',주최기관:'환경재단',참가대상:'전국 청소년',접수시작일:'2026-07-05',접수마감일:'2026-07-10',간단설명:'기후위기를 주제로 한 포스터 공모전입니다.',신청링크:'https://example.com/apply/2',포스터이미지:'https://picsum.photos/seed/eco/600/400',조회수:34},
+  {고유번호:3,대회명:'수학·과학 창의력 경진대회',분야:'과학/수학',주최기관:'과학창의재단',참가대상:'중학생',접수시작일:'2026-07-08',접수마감일:'2026-08-01',간단설명:'창의적 문제 해결 능력을 겨루는 대회입니다.',신청링크:'https://example.com/apply/3',포스터이미지:'https://picsum.photos/seed/sci/600/400',조회수:8},
+  {고유번호:4,대회명:'청소년 UCC 영상 공모전',분야:'영상/미디어',주최기관:'청소년문화진흥원',참가대상:'만 13~18세',접수시작일:'2026-07-01',접수마감일:'2026-07-09',간단설명:'우리 동네 자랑을 담은 영상 공모전입니다.',신청링크:'https://example.com/apply/4',포스터이미지:'https://picsum.photos/seed/ucc/600/400',조회수:52},
+  {고유번호:5,대회명:'전국 고교 토론 대회',분야:'인문/토론',주최기관:'교육방송',참가대상:'고등학생',접수시작일:'2026-07-10',접수마감일:'2026-08-20',간단설명:'사회 이슈를 주제로 한 토론 대회입니다.',신청링크:'https://example.com/apply/5',포스터이미지:'https://picsum.photos/seed/debate/600/400',조회수:5},
+  {고유번호:6,대회명:'청소년 창업 아이디어 경진대회',분야:'창업/경제',주최기관:'창업진흥원',참가대상:'중·고등학생',접수시작일:'2026-07-02',접수마감일:'2026-07-14',간단설명:'반짝이는 창업 아이디어를 발표하세요.',신청링크:'https://example.com/apply/6',포스터이미지:'https://picsum.photos/seed/startup/600/400',조회수:27}
+];
+</script>
+</body>
+</html>
